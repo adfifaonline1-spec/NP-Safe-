@@ -1,0 +1,8 @@
+{
+  "name": "Remix NP-Safe นครปฐมรู้ทันสแกมเมอร์",
+  "description": "ศูนย์กลางเตือนภัย ฐานข้อมูลสแกมเมอร์ และคู่มือฉุกเฉินรับมือมิจฉาชีพสำหรับชาวจังหวัดนครปฐม",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
