@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="shieldGrad" x1="10" y1="10" x2="90" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="15" y1="5" x2="85" y2="95" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+  </defs>
+  <path d="M50 6 L88 20 C88 56 68 83 50 94 C32 83 12 56 12 20 Z" fill="url(#shieldGrad)" stroke="url(#goldGrad)" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Stupa Spire -->
+  <line x1="50" y1="18" x2="50" y2="28" stroke="#fef08a" stroke-width="3" stroke-linecap="round"/>
+  <!-- Chedi Dome -->
+  <path d="M44 36 Q50 34 56 36 Q65 44 64 58 Q63 64 61 68 L39 68 Q37 64 36 58 Q35 44 44 36 Z" fill="url(#goldGrad)"/>
+  <rect x="35" y="68" width="30" height="5" rx="1.5" fill="#b45309"/>
+  <!-- Checkmark -->
+  <path d="M42 54 L48 60 L60 48" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

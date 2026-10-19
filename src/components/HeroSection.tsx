@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, ShieldCheck, AlertTriangle, ArrowRight, ShieldAlert, Sparkles, MapPin, Copy, Check, Quote } from 'lucide-react';
+import { Search, ShieldCheck, AlertTriangle, ArrowRight, ShieldAlert, Sparkles, MapPin, Copy, Check, Quote, Activity, Radio, Lock } from 'lucide-react';
 import { DISTRICTS } from '../data/nakhonPathomData';
 import { NakhonPathomDistrict } from '../types/scam';
+import { NpLogo } from './NpLogo';
 
 interface HeroSectionProps {
   onSearch: (query: string) => void;
@@ -43,15 +44,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="lg:col-span-7 space-y-6">
             {/* Context meta label with logo */}
             <div className="flex items-center gap-3">
-              <img 
-                src="/src/assets/images/np_mahidol_scam_shield_1792037427243.jpg" 
-                alt="ตราสัญลักษณ์ นครปฐม มหิดล" 
-                className="w-12 h-12 rounded-xl object-cover border border-amber-400/60 shadow-sm shrink-0"
-              />
+              <NpLogo size="lg" />
               <div>
                 <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-amber-700 tracking-wide uppercase">
                   <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span>โครงการวิชาสิทธิมนุษยชน</span>
+                  <span>โครงการ มสสส301 สิทธิมนุษยชนและการสร้างเสริมสันติภาพ</span>
                   <span className="text-slate-300">/</span>
                   <span>วิทยาลัยศาสนศึกษา ม.มหิดล ศาลายา</span>
                 </div>
@@ -75,7 +72,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <Quote className="w-3.5 h-3.5 text-amber-600 fill-amber-600 shrink-0" />
                     <span>คติเตือนสติประจำเว็บของเรา</span>
                     <span className="text-amber-400">·</span>
-                    <span className="text-amber-700 font-semibold normal-case">วิชาสิทธิมนุษยชน ม.มหิดล</span>
+                    <span className="text-amber-700 font-semibold normal-case">มสสส301 สิทธิมนุษยชนและการสร้างเสริมสันติภาพ ม.มหิดล</span>
                   </div>
                   <p className="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-snug">
                     “ข้อความหวานมักมีพิษ ความโลภคือเหยื่อ เขาเก่งหลอก แต่คุณเก่งเช็ก”
@@ -126,12 +123,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                   ค้นหากลโกง
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                <span className="font-medium text-slate-700">ค้นหายอดนิยม:</span>
+              <div className="flex flex-wrap items-center gap-2 mt-2 text-xs text-slate-500">
+                <span className="font-semibold text-slate-700">ค้นหายอดนิยม:</span>
                 <button
                   type="button"
                   onClick={() => { setSearchInput('หอพักศาลายา'); onSearch('หอพักศาลายา'); }}
-                  className="hover:text-amber-700 underline underline-offset-2"
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
                 >
                   หอพักศาลายา
                 </button>
@@ -139,15 +136,31 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => { setSearchInput('สภ.เมืองนครปฐม'); onSearch('สภ.เมืองนครปฐม'); }}
-                  className="hover:text-amber-700 underline underline-offset-2"
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
                 >
                   สภ.เมือง
                 </button>
                 <span>·</span>
                 <button
                   type="button"
+                  onClick={() => { setSearchInput('PEA'); onSearch('PEA'); }}
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
+                >
+                  คืนค่าไฟ PEA
+                </button>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={() => { setSearchInput('งานออนไลน์'); onSearch('งานออนไลน์'); }}
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
+                >
+                  งานออนไลน์ นศ.
+                </button>
+                <span>·</span>
+                <button
+                  type="button"
                   onClick={() => { setSearchInput('ปุ๋ย'); onSearch('ปุ๋ย'); }}
-                  className="hover:text-amber-700 underline underline-offset-2"
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
                 >
                   ปุ๋ยเกษตร
                 </button>
@@ -155,9 +168,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => { setSearchInput('พัสดุ'); onSearch('พัสดุ'); }}
-                  className="hover:text-amber-700 underline underline-offset-2"
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
                 >
                   พัสดุ COD
+                </button>
+                <span>·</span>
+                <button
+                  type="button"
+                  onClick={() => { setSearchInput('พระเครื่อง'); onSearch('พระเครื่อง'); }}
+                  className="hover:text-amber-700 underline underline-offset-2 cursor-pointer"
+                >
+                  พระเครื่อง
                 </button>
               </div>
             </form>
@@ -183,40 +204,81 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Hero Graphic */}
+          {/* Right Column: Hero Graphic - Pure Vector Civic Cyber Shield */}
           <div className="lg:col-span-5 relative">
-            <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-slate-900">
-              {/* Floating Mahidol & Nakhon Pathom Anti-Scam Crest Badge */}
-              <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-2 bg-slate-950/85 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-amber-400/50 shadow-md">
-                <img
-                  src="/src/assets/images/np_mahidol_scam_shield_1792037427243.jpg"
-                  alt="ตราสัญลักษณ์ นครปฐม มหิดล"
-                  className="w-8 h-8 rounded-lg object-cover"
-                />
-                <div className="text-[10px] text-white font-bold leading-tight">
-                  <span className="block text-amber-300">นครปฐม · มหิดล</span>
-                  <span className="block text-slate-300 font-normal">Civic Cyber Shield</span>
+            <div className="relative rounded-2xl overflow-hidden border border-amber-500/30 shadow-xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 text-white p-6 sm:p-7 flex flex-col justify-between min-h-[360px]">
+              
+              {/* Background ambient decorative effects */}
+              <div className="absolute -top-12 -right-12 w-48 h-48 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-sky-500/10 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Top Header inside card */}
+              <div className="relative z-10 flex items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] font-semibold tracking-wide text-emerald-400 uppercase">
+                    ระบบเฝ้าระวังภัยออนไลน์ 24 ชม.
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-slate-800/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-amber-400/40 text-[10px] text-amber-300 font-semibold shadow-2xs">
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                  <span>นครปฐม · มหิดล</span>
                 </div>
               </div>
 
-              <img
-                src="/src/assets/images/nakhon_pathom_shield_1792033755075.jpg"
-                alt="NP-Safe นครปฐมรู้ทันสแกมเมอร์ พิทักษ์ชุมชนองค์พระปฐมเจดีย์"
-                referrerPolicy="no-referrer"
-                className="w-full h-72 sm:h-80 object-cover opacity-95 hover:scale-102 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex flex-col justify-end p-5 text-white">
-                <div className="flex items-center gap-1.5 text-xs text-amber-300 font-medium mb-1">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>นครปฐม ปลอดภัย มั่นใจ ไร้สแกมเมอร์</span>
+              {/* Center Emblem Visual */}
+              <div className="relative z-10 my-4 flex flex-col items-center text-center">
+                <div className="relative">
+                  {/* Subtle pulsing concentric ring */}
+                  <div className="absolute -inset-3 rounded-full border border-amber-400/20 animate-ping opacity-25 pointer-events-none" />
+                  <div className="absolute -inset-1.5 rounded-full border border-amber-400/40 pointer-events-none" />
+                  <NpLogo size="hero" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-1">
-                  เครือข่ายความร่วมมือพลเมืองและสถานีตำรวจท้องที่
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  สภ.เมืองนครปฐม · สภ.พุทธมณฑล · สภ.กำแพงแสน · สภ.นครชัยศรี · สภ.สามพราน · สภ.ดอนตูม · สภ.บางเลน
-                </p>
+                <div className="mt-3">
+                  <div className="text-xs font-bold text-amber-400 tracking-wider uppercase flex items-center justify-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>NP-Safe Civic Cyber Shield</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white mt-0.5">
+                    นครปฐมรู้ทันสแกมเมอร์
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                    โครงการ มสสส301 สิทธิมนุษยชนและการสร้างเสริมสันติภาพ ม.มหิดล ศาลายา
+                  </p>
+                </div>
               </div>
+
+              {/* 7 District Network Badges */}
+              <div className="relative z-10 pt-3 border-t border-slate-800/80">
+                <div className="flex items-center justify-between text-[11px] text-slate-400 mb-2">
+                  <span className="flex items-center gap-1 font-medium text-slate-300">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                    <span>เครือข่ายคุ้มครอง 7 อำเภอ:</span>
+                  </span>
+                  <span className="text-emerald-400 font-mono text-[10px] font-semibold">Active · 8 สภ.</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'พุทธมณฑล',
+                    'เมืองนครปฐม',
+                    'กำแพงแสน',
+                    'นครชัยศรี',
+                    'สามพราน',
+                    'ดอนตูม',
+                    'บางเลน',
+                  ].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => onSelectDistrict(d as NakhonPathomDistrict)}
+                      className="px-2 py-0.5 text-[10px] font-medium bg-slate-800/90 hover:bg-amber-950/60 hover:text-amber-300 hover:border-amber-500/50 text-slate-300 rounded-md border border-slate-700/80 transition-all cursor-pointer"
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
 

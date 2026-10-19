@@ -20,7 +20,13 @@ export default function App() {
     try {
       const saved = localStorage.getItem('np_safe_reports');
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          // Keep user submitted reports
+          const userSubmitted = parsed.filter((r: ScamReport) => r.id && r.id.startsWith('np-user-'));
+          const existingIds = new Set(userSubmitted.map((r: ScamReport) => r.id));
+          return [...userSubmitted, ...INITIAL_REPORTS.filter((r) => !existingIds.has(r.id))];
+        }
       }
     } catch {
       // fallback
@@ -128,8 +134,13 @@ export default function App() {
             {/* 2. Interactive Pre-Transfer Scam Detector */}
             <DetectorWidget
               reports={reports}
+              onViewReportMatch={handleHeroSearch}
               onOpenReportModal={() => {
                 setActiveTab('report');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              onOpenPlaybook={() => {
+                setActiveTab('playbook');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />

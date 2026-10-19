@@ -6,28 +6,36 @@ import {
   Smartphone, 
   CreditCard, 
   Link2, 
-  MessageSquareWarning, 
   CheckCircle2, 
   XCircle, 
   ArrowRight,
-  Sparkles,
-  Zap
+  Zap,
+  X,
+  Copy,
+  Check,
+  ExternalLink,
+  ShieldAlert
 } from 'lucide-react';
 import { ScamReport } from '../types/scam';
 
 interface DetectorWidgetProps {
   reports: ScamReport[];
   onFoundReportMatch?: (query: string) => void;
+  onViewReportMatch?: (query: string) => void;
   onOpenReportModal: () => void;
+  onOpenPlaybook?: () => void;
 }
 
 export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
   reports,
   onFoundReportMatch,
+  onViewReportMatch,
   onOpenReportModal,
+  onOpenPlaybook,
 }) => {
   const [detectMode, setDetectMode] = useState<'all' | 'phone' | 'account' | 'text'>('all');
   const [inputQuery, setInputQuery] = useState('');
+  const [copiedResult, setCopiedResult] = useState(false);
   const [scanResult, setScanResult] = useState<{
     status: 'clean' | 'warning' | 'danger';
     title: string;
@@ -35,6 +43,7 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
     matchedReports: ScamReport[];
     riskScore: number; // 0 to 100
     recommendation: string;
+    flags: string[];
   } | null>(null);
 
   const handleScan = (e?: React.FormEvent, directText?: string) => {
@@ -58,64 +67,140 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
       return matchPhone || matchBank || matchText || matchHandle;
     });
 
-    // 2. Heuristic check for phishing links and scam scripts
+    // 2. Comprehensive heuristics check
     let heuristicScore = 0;
     const flags: string[] = [];
 
-    if (lowerQuery.includes('.apk') || lowerQuery.includes('โหลดแอป') || lowerQuery.includes('ติดตั้ง')) {
+    // Phishing / APK downloads
+    if (lowerQuery.includes('.apk') || lowerQuery.includes('โหลดแอป') || lowerQuery.includes('ติดตั้ง') || lowerQuery.includes('ดาวน์โหลดไฟล์')) {
+      heuristicScore += 50;
+      flags.push('ตรวจพบคำสั่งติดตั้งแอปพลิเคชันหรือไฟล์ .apk (เสี่ยงแอปดูดเงินและคุมจอระยะไกล 100%)');
+    }
+
+    // Police / Court impersonation
+    if (
+      lowerQuery.includes('สภ.') || 
+      lowerQuery.includes('ตำรวจ') || 
+      lowerQuery.includes('หมายจับ') || 
+      lowerQuery.includes('ฟอกเงิน') || 
+      lowerQuery.includes('ปปง.') ||
+      lowerQuery.includes('โอนตรวจสอบ') ||
+      lowerQuery.includes('ผู้กำกับ')
+    ) {
       heuristicScore += 45;
-      flags.push('ตรวจพบคำสั่งติดตั้งแอปหรือไฟล์ .apk (เสี่ยงแอปดูดเงินสูงสุด)');
+      flags.push('ตรวจพบบทสนทนาอ้างคดีความ/ข่มขู่จากตำรวจ (ตำรวจจริงไม่มีสอบปากคำผ่าน LINE หรือให้โอนเงินตรวจสอบ)');
     }
-    if (lowerQuery.includes('สภ.') || lowerQuery.includes('ตำรวจ') || lowerQuery.includes('หมายจับ') || lowerQuery.includes('ฟอกเงิน') || lowerQuery.includes('ปปง.')) {
+
+    // Time pressure / urgency
+    if (
+      lowerQuery.includes('15 นาที') || 
+      lowerQuery.includes('หลุดจอง') || 
+      lowerQuery.includes('โอนมัดจำด่วน') ||
+      lowerQuery.includes('มีคนรอต่อคิว') ||
+      lowerQuery.includes('โอนสิทธิ์')
+    ) {
+      heuristicScore += 35;
+      flags.push('ตรวจพบเทคนิคกดดันเวลาเร่งรัดโอนมัดจำ (พฤติกรรมยอดนิยมของเพจหอพักทิพย์ศาลายา)');
+    }
+
+    // PEA Electricity scam
+    if (
+      (lowerQuery.includes('คืนเงิน') || lowerQuery.includes('ค่าไฟ') || lowerQuery.includes('มิเตอร์')) &&
+      (lowerQuery.includes('pea') || lowerQuery.includes('การไฟฟ้า') || lowerQuery.includes('ลงทะเบียน'))
+    ) {
+      heuristicScore += 45;
+      flags.push('ตรวจพบกลโกงคืนเงินประกันมิเตอร์ไฟฟ้า PEA ปลอม (การไฟฟ้าไม่มีนโยบายส่ง SMS แนบลิงก์)');
+    }
+
+    // Short links & suspicious domains
+    if (
+      lowerQuery.includes('bit.ly') ||
+      lowerQuery.includes('tinyurl') ||
+      lowerQuery.includes('cutt.ly') ||
+      lowerQuery.includes('t.co') ||
+      lowerQuery.includes('.cc') ||
+      lowerQuery.includes('.top') ||
+      lowerQuery.includes('.xyz') ||
+      lowerQuery.includes('.vip') ||
+      lowerQuery.includes('line.me/r/ti/g')
+    ) {
+      heuristicScore += 35;
+      flags.push('ตรวจพบลิงก์ย่อหรือโดเมนเสี่ยงสูงที่มักใช้ปกปิดปลายทางอันตราย');
+    }
+
+    // Fake jobs / Easy income
+    if (
+      lowerQuery.includes('งานออนไลน์') ||
+      lowerQuery.includes('กดไลก์') ||
+      lowerQuery.includes('คีย์ข้อมูล') ||
+      lowerQuery.includes('สำรองเงิน') ||
+      lowerQuery.includes('ภารกิจ')
+    ) {
       heuristicScore += 40;
-      flags.push('ตรวจพบบทสนทนาอ้างคดีความ/ข่มขู่จากตำรวจ');
+      flags.push('ตรวจพบพฤติการณ์ชวนทำงานออนไลน์หลอกกินเงินสำรอง (เหยื่อส่วนใหญ่เป็นนักศึกษา)');
     }
-    if (lowerQuery.includes('15 นาที') || lowerQuery.includes('หลุดจอง') || lowerQuery.includes('โอนมัดจำด่วน')) {
-      heuristicScore += 30;
-      flags.push('ตรวจพบเทคนิคกดดันเวลาและเร่งรัดโอนมัดจำ');
-    }
-    if (lowerQuery.includes('คืนเงิน') && (lowerQuery.includes('ค่าไฟ') || lowerQuery.includes('มิเตอร์') || lowerQuery.includes('ประกัน'))) {
-      heuristicScore += 40;
-      flags.push('ตรวจพบกลโกงคืนเงินประกันมิเตอร์ไฟฟ้า PEA ปลอม');
+
+    // PromptPay identification
+    if (cleanNumbers.length === 13) {
+      flags.push('ข้อมูลระบุเป็นเลขบัตรประชาชน 13 หลัก (โอนพร้อมเพย์บุคคลธรรมดา ตรวจสอบชื่อปลายทางทุกครั้ง)');
+    } else if (cleanNumbers.length === 10 && cleanNumbers.startsWith('0')) {
+      flags.push('ข้อมูลระบุเป็นเบอร์มือถือ 10 หลัก (ตรวจจับรูปแบบเบอร์โทรศัพท์ในประเทศไทย)');
     }
 
     if (matched.length > 0) {
       setScanResult({
         status: 'danger',
-        riskScore: 95,
-        title: `🚨 ตรวจพบในฐานข้อมูลสแกมเมอร์ (${matched.length} เคสที่ตรงกัน)`,
-        description: `เบอร์โทรศัพท์หรือเลขบัญชีนี้ มีการแจ้งเตือนภัยไว้ในระบบ NP-Safe นครปฐม`,
+        riskScore: 98,
+        title: `🚨 ตรวจพบในฐานข้อมูลสแกมเมอร์ (${matched.length} เคสตรงกับระบบ)`,
+        description: `เบอร์โทรศัพท์หรือเลขบัญชีนี้ มีการแจ้งเตือนภัยไว้ในระบบ NP-Safe นครปฐม และได้รับการยืนยันจากพลเมือง`,
         matchedReports: matched,
-        recommendation: 'ห้ามโอนเงิน ห้ามกดลิงก์ และห้ามให้ข้อมูลส่วนตัวโดยเด็ดขาด!',
+        recommendation: 'ห้ามโอนเงิน ห้ามกดลิงก์ และห้ามให้ข้อมูลส่วนตัวโดยเด็ดขาด! หากเผลอโอนไปแล้วให้กดเปิดคู่มือฉุกเฉิน 72 ชม. ทันที',
+        flags: flags.length > 0 ? flags : ['ตรงกับประวัติผู้หลอกลวงในสารบบนครปฐม'],
       });
+      if (onFoundReportMatch) onFoundReportMatch(query);
     } else if (heuristicScore >= 40) {
       setScanResult({
         status: 'danger',
-        riskScore: Math.min(90, 50 + heuristicScore),
-        title: '⚠️ ตรวจพบสัญญาณอันตรายระดับสูง (Red Flags)',
-        description: flags.join(' · '),
+        riskScore: Math.min(95, 50 + heuristicScore),
+        title: '⚠️ ตรวจพบสัญญาณอันตรายระดับสูง (Red Flags Pattern)',
+        description: 'ข้อความหรือเบอร์นี้มีลักษณะตรงกับแบบแผนกลโกงที่กำลังแพร่ระบาดในนครปฐมอย่างชัดเจน',
         matchedReports: [],
-        recommendation: 'ตรงกับพฤติการณ์กลโกงที่กำลังระบาดในนครปฐม ควรตัดบททันทีและตรวจสอบกับหน่วยงานจริง',
+        recommendation: 'ตรงกับพฤติการณ์กลโกงที่กำลังระบาด ตัดบทสนทนาทันที อย่าหลงเชื่อคำขู่หรือข้อเสนอเร่งด่วน',
+        flags,
       });
-    } else if (heuristicScore > 0 || cleanNumbers.length === 10) {
+    } else if (heuristicScore > 0 || cleanNumbers.length === 10 || cleanNumbers.length >= 8) {
       setScanResult({
         status: 'warning',
-        riskScore: 45,
-        title: 'เฝ้าระวัง: ยังไม่พบประวัติในระบบ แต่ควรตรวจสอบเพิ่มเติม',
-        description: flags.length > 0 ? flags.join(' · ') : 'ยังไม่มีรายงานในฐานข้อมูล NP-Safe แต่ควรสอบถามปลายทางให้แน่ใจก่อนทำธุรกรรม',
+        riskScore: 50,
+        title: 'เฝ้าระวัง: ยังไม่พบประวัติในระบบ แต่ควรตรวจสอบตัวจริงให้แน่ใจ',
+        description: flags.length > 0 ? flags.join(' · ') : 'ยังไม่มีรายงานเลขนี้ในฐานข้อมูล NP-Safe แต่ควรสอบถามปลายทางให้แน่ใจก่อนทำธุรกรรม',
         matchedReports: [],
-        recommendation: 'หากเป็นหอพักให้ไปดูห้องจริงกับนิติบุคคล / หากเป็นตำรวจไม่มีการสอบปากคำทางโทรศัพท์',
+        recommendation: 'หากเป็นหอพักให้โทรสอบถามนิติบุคคลอาคารจริง / หากอ้างเป็นเจ้าหน้าที่ไม่มีการขอข้อมูลลับทางโทรศัพท์',
+        flags: flags.length > 0 ? flags : ['ไม่พบในบัญชีดำ แต่ไม่ควรประมาท'],
       });
     } else {
       setScanResult({
         status: 'clean',
-        riskScore: 10,
+        riskScore: 12,
         title: 'ยังไม่พบรายงานในฐานข้อมูล NP-Safe นครปฐม',
-        description: 'ไม่พบเบอร์หรือเลขบัญชีนี้ในประวัติแจ้งเตือนภัยของเครือข่าย',
+        description: 'ไม่พบเบอร์หรือเลขบัญชีนี้ในประวัติแจ้งเตือนภัยของเครือข่ายความร่วมมือพลเมือง',
         matchedReports: [],
-        recommendation: 'เพื่อความปลอดภัยสูงสุด ให้ปฏิบัติตามหลัก "ไม่เชื่อ ไม่รีบ ไม่โอน" ก่อนทำธุรกรรมทุกครั้ง',
+        recommendation: 'เพื่อความปลอดภัยสูงสุด ปฏิบัติตามหลัก 3 ไม่: "ไม่เชื่อ ไม่รีบ ไม่โอน" ก่อนทำธุรกรรมทุกครั้ง',
+        flags: ['ปลอดภัยเบื้องต้นตามสารบบชุมชน'],
       });
     }
+  };
+
+  const handleCopyAlert = () => {
+    if (!scanResult) return;
+    const shareText = `[แจ้งเตือนภัยไซเบอร์ NP-Safe นครปฐม]
+ข้อความ/เบอร์ตรวจ: "${inputQuery}"
+ผลการตรวจ: ${scanResult.title} (ระดับความเสี่ยง ${scanResult.riskScore}/100)
+คำแนะนำ: ${scanResult.recommendation}
+ตรวจสอบเพิ่มเติมได้ที่ NP-Safe รู้ทันสแกมเมอร์ นครปฐม`;
+    navigator.clipboard.writeText(shareText);
+    setCopiedResult(true);
+    setTimeout(() => setCopiedResult(false), 2500);
   };
 
   return (
@@ -191,15 +276,28 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
                   ? 'พิมพ์เลขบัญชี หรือชื่อเจ้าของบัญชีก่อนโอน...'
                   : detectMode === 'text'
                   ? 'วางข้อความ SMS หรือประโยคที่คนร้ายพิมพ์มา...'
-                  : 'วางเบอร์โทร, เลขบัญชี, ชื่อบัญชี, ลิงก์, หรือข้อความที่น่าสงสัย...'
+                  : 'วางเบอร์โทร, เลขบัญชี, พร้อมเพย์, ลิงก์, หรือข้อความที่น่าสงสัย...'
               }
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 focus:bg-white transition-all shadow-xs"
+              className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 focus:bg-white transition-all shadow-xs"
             />
+            {inputQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInputQuery('');
+                  setScanResult(null);
+                }}
+                className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-700 p-0.5 rounded-full"
+                title="ล้างข้อมูล"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <button
             type="submit"
-            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0"
+            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors shadow-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span>ตรวจจับความเสี่ยง</span>
@@ -215,7 +313,7 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
               setInputQuery('0684529182');
               handleScan(undefined, '0684529182');
             }}
-            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 font-mono transition-colors"
+            className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 rounded-md text-slate-700 font-mono transition-colors cursor-pointer"
           >
             068-452-9182 (หอพักศาลายา)
           </button>
@@ -225,7 +323,7 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
               setInputQuery('0952318840');
               handleScan(undefined, '0952318840');
             }}
-            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 font-mono transition-colors"
+            className="px-2.5 py-1 bg-slate-100 hover:bg-rose-100 hover:text-rose-900 rounded-md text-slate-700 font-mono transition-colors cursor-pointer"
           >
             095-231-8840 (สภ.เมืองปลอม)
           </button>
@@ -236,9 +334,20 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
               setInputQuery(text);
               handleScan(undefined, text);
             }}
-            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-md text-slate-700 transition-colors"
+            className="px-2.5 py-1 bg-slate-100 hover:bg-rose-100 hover:text-rose-900 rounded-md text-slate-700 transition-colors cursor-pointer"
           >
-            SMS คืนเงิน PEA (แอปดูดเงิน)
+            SMS คืนเงิน PEA (.apk)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const text = 'ห้องหลุดจองคอนโดศาลายา โอนมัดจำด่วนใน 15 นาที';
+              setInputQuery(text);
+              handleScan(undefined, text);
+            }}
+            className="px-2.5 py-1 bg-slate-100 hover:bg-amber-100 hover:text-amber-900 rounded-md text-slate-700 transition-colors cursor-pointer"
+          >
+            หลุดจอง 15 นาที
           </button>
         </div>
       </form>
@@ -283,14 +392,72 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
             </div>
           </div>
 
+          {/* Flags identified */}
+          {scanResult.flags && scanResult.flags.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-xs font-bold text-slate-800">จุดสังเกตสำคัญ (Indicators):</span>
+              <ul className="text-xs text-slate-700 list-disc list-inside space-y-0.5">
+                {scanResult.flags.map((flag, idx) => (
+                  <li key={idx}>{flag}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="p-3 bg-white/90 rounded-lg border border-black/5 text-xs text-slate-800 space-y-1">
             <strong className="block text-slate-900 font-semibold">💡 ข้อปฏิบัติทันที:</strong>
             <p>{scanResult.recommendation}</p>
           </div>
 
+          {/* Action buttons (Share / Copy / Emergency Playbook / Database) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-black/10">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyAlert}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs"
+              >
+                {copiedResult ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-emerald-700 font-bold">คัดลอกคำเตือนแล้ว!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-slate-600" />
+                    <span>แชร์คำเตือนนี้ให้คนใกล้ชิด</span>
+                  </>
+                )}
+              </button>
+
+              {onViewReportMatch && (
+                <button
+                  type="button"
+                  onClick={() => onViewReportMatch(inputQuery)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs"
+                >
+                  <Search className="w-3.5 h-3.5 text-slate-600" />
+                  <span>ค้นหาในฐานข้อมูล</span>
+                </button>
+              )}
+            </div>
+
+            {scanResult.status === 'danger' && onOpenPlaybook && (
+              <button
+                type="button"
+                onClick={onOpenPlaybook}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-xs"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>เผลอโอนแล้ว? เปิดคู่มือฉุกเฉิน 72 ชม.</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
           {/* If reports matched, preview them */}
           {scanResult.matchedReports.length > 0 && (
-            <div className="space-y-2 pt-1">
+            <div className="space-y-2 pt-2 border-t border-rose-200">
               <span className="text-xs font-bold text-slate-800 block">
                 เคสที่ถูกรายงานในนครปฐม:
               </span>
@@ -316,7 +483,7 @@ export const DetectorWidget: React.FC<DetectorWidgetProps> = ({
               <span className="text-rose-900 font-medium">เคยพบเบอร์หรือบัญชีนี้เหมือนกันใช่ไหม?</span>
               <button
                 onClick={onOpenReportModal}
-                className="font-bold text-slate-900 underline underline-offset-2 hover:text-black"
+                className="font-bold text-slate-900 underline underline-offset-2 hover:text-black cursor-pointer"
               >
                 + ร่วมรายงานเพื่ออัปเดตสถิติเตือนภัย
               </button>

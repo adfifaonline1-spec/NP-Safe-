@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, PhoneCall, ExternalLink, GraduationCap, Scale } from 'lucide-react';
 import { ACADEMIC_PROJECT_INFO } from '../data/nakhonPathomData';
+import { NpLogo } from './NpLogo';
 
 interface FooterProps {
   onSelectTab: (tab: string) => void;
@@ -14,11 +15,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
           {/* Brand Info */}
           <div className="space-y-3 md:col-span-1">
             <div className="flex items-center gap-2.5">
-              <img 
-                src="/src/assets/images/np_mahidol_scam_shield_1792037427243.jpg" 
-                alt="NP-Safe นครปฐม มหิดล" 
-                className="w-9 h-9 rounded-md object-cover border border-amber-400/50"
-              />
+              <NpLogo size="sm" />
               <span className="text-white font-bold text-sm tracking-tight">
                 NP-Safe นครปฐม
               </span>
@@ -131,7 +128,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
             “ข้อความหวานมักมีพิษ ความโลภคือเหยื่อ เขาเก่งหลอก แต่คุณเก่งเช็ก”
           </div>
           <div className="text-slate-500 text-center sm:text-right">
-            © {new Date().getFullYear()} NP-Safe ศูนย์คุ้มครองผู้เสียหายจากการหลอกลวงออนไลน์ · โครงการวิชาสิทธิมนุษยชน มหาวิทยาลัยมหิดล ศาลายา
+            © {new Date().getFullYear()} NP-Safe ศูนย์คุ้มครองผู้เสียหายจากการหลอกลวงออนไลน์ · โครงการ มสสส301 สิทธิมนุษยชนและการสร้างเสริมสันติภาพ มหาวิทยาลัยมหิดล ศาลายา
           </div>
           <div className="flex items-center gap-4">
             <a

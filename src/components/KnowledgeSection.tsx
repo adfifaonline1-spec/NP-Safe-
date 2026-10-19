@@ -163,7 +163,7 @@ export const KnowledgeSection: React.FC<KnowledgeSectionProps> = ({ onOpenPlaybo
       <div className="border-b border-slate-200 pb-5">
         <div className="flex items-center gap-2 text-xs font-semibold text-amber-700">
           <Scale className="w-4 h-4" />
-          <span>วิชาสิทธิมนุษยชน · วิทยาลัยศาสนศึกษา มหาวิทยาลัยมหิดล</span>
+          <span>มสสส301 สิทธิมนุษยชนและการสร้างเสริมสันติภาพ · วิทยาลัยศาสนศึกษา มหาวิทยาลัยมหิดล</span>
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-slate-900 mt-1">
           การบูรณาการมิติด้านสิทธิมนุษยชนและคลังความรู้กลโกง

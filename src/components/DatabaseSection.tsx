@@ -62,6 +62,13 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<ScamCategory | 'all'>('all');
   const [filterOutcome, setFilterOutcome] = useState<'all' | 'avoided' | 'loss'>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const handleCopyField = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(id);
+    setTimeout(() => setCopiedField(null), 1800);
+  };
 
   // Sync initialSearchQuery if updated externally
   React.useEffect(() => {
@@ -86,19 +93,44 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
       if (filterOutcome === 'avoided' && !item.avoided) return false;
       if (filterOutcome === 'loss' && item.avoided) return false;
 
-      // Text query search
+      // Text query search with smart normalization
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
+        const query = searchQuery.toLowerCase().trim();
+        const cleanQueryNumbers = query.replace(/[^0-9]/g, '');
+
         const inTitle = item.title.toLowerCase().includes(query);
-        const inPhone = item.phoneNumber?.toLowerCase().includes(query);
-        const inBank = item.bankAccount?.toLowerCase().includes(query);
-        const inAccount = item.accountName?.toLowerCase().includes(query);
+        const inPhone = item.phoneNumber ? item.phoneNumber.toLowerCase().includes(query) : false;
+        const inBank = item.bankAccount ? item.bankAccount.toLowerCase().includes(query) : false;
+        const inAccount = item.accountName ? item.accountName.toLowerCase().includes(query) : false;
+        const inBankName = item.bankName ? item.bankName.toLowerCase().includes(query) : false;
         const inStory = item.story.toLowerCase().includes(query);
         const inCounter = item.countermeasures.toLowerCase().includes(query);
-        const inHandle = item.scammerHandle?.toLowerCase().includes(query);
-        const inLocation = item.locationDetail?.toLowerCase().includes(query);
+        const inHandle = item.scammerHandle ? item.scammerHandle.toLowerCase().includes(query) : false;
+        const inLocation = item.locationDetail ? item.locationDetail.toLowerCase().includes(query) : false;
+        const inDistrict = item.district.toLowerCase().includes(query);
+        const inTags = item.tags ? item.tags.some((t) => t.toLowerCase().includes(query)) : false;
 
-        return inTitle || inPhone || inBank || inAccount || inStory || inCounter || inHandle || inLocation;
+        // Number normalization check (e.g. typing 0684529182 finds 068-452-9182)
+        const cleanItemPhone = item.phoneNumber ? item.phoneNumber.replace(/[^0-9]/g, '') : '';
+        const cleanItemBank = item.bankAccount ? item.bankAccount.replace(/[^0-9]/g, '') : '';
+        const matchCleanPhone = cleanQueryNumbers.length >= 6 && cleanItemPhone.includes(cleanQueryNumbers);
+        const matchCleanBank = cleanQueryNumbers.length >= 6 && cleanItemBank.includes(cleanQueryNumbers);
+
+        return (
+          inTitle ||
+          inPhone ||
+          inBank ||
+          inAccount ||
+          inBankName ||
+          inStory ||
+          inCounter ||
+          inHandle ||
+          inLocation ||
+          inDistrict ||
+          inTags ||
+          matchCleanPhone ||
+          matchCleanBank
+        );
       }
 
       return true;
@@ -334,54 +366,104 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
         <div className="space-y-6">
           {/* Filter and Search Bar */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-4">
-            {/* Search input */}
+            {/* Search input with Clear button */}
             <div className="relative">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ค้นหาเบอร์โทร, เลขบัญชีม้า, ชื่อคนร้าย, เพจปลอม, หรือข้อความ..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-amber-600 focus:bg-white"
+                placeholder="ค้นหาเบอร์โทร, เลขบัญชีม้า, ชื่อคนร้าย, เพจปลอม, อำเภอ หรือข้อความ..."
+                className="w-full pl-9 pr-16 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-amber-600 focus:bg-white shadow-2xs"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
+                  className="absolute right-3 top-2.5 px-2 py-0.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
                 >
-                  ล้าง
+                  ล้างค้นหา
                 </button>
               )}
             </div>
 
-            {/* Filter controls */}
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
-              {/* District selector */}
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-slate-700">อำเภอ:</span>
-                <select
-                  value={selectedDistrict}
-                  onChange={(e) => onSelectDistrict(e.target.value as NakhonPathomDistrict | 'ทั้งหมด')}
-                  className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-slate-800 font-medium focus:outline-none focus:border-amber-600"
+            {/* Popular search tags for instant 1-click search */}
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 pt-0.5">
+              <span className="font-semibold text-slate-700">คำค้นหายอดนิยม:</span>
+              {[
+                'หอพักศาลายา',
+                'สภ.เมืองนครปฐม',
+                'คืนค่าไฟ PEA',
+                'งานออนไลน์ นศ.',
+                'ปุ๋ยกำแพงแสน',
+                'พัสดุ COD',
+                'หลวงพ่อเปิ่น',
+                'แอปดูดเงิน',
+                'กู้เงินด่วน',
+                'พร้อมเพย์',
+                'ผ่อนไอโฟน',
+                'ส้มโอนครชัยศรี',
+              ].map((kw) => (
+                <button
+                  key={kw}
+                  type="button"
+                  onClick={() => setSearchQuery(kw)}
+                  className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                    searchQuery === kw
+                      ? 'bg-amber-600 text-white font-semibold shadow-2xs'
+                      : 'bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-700'
+                  }`}
                 >
-                  <option value="ทั้งหมด">ทุกอำเภอในนครปฐม</option>
-                  {DISTRICTS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  {kw}
+                </button>
+              ))}
+            </div>
 
+            {/* District Fast-Filter Pills with counts */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs pt-1 border-t border-slate-100">
+              <span className="font-semibold text-slate-700 shrink-0">เลือกอำเภอ:</span>
+              <button
+                type="button"
+                onClick={() => onSelectDistrict('ทั้งหมด')}
+                className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-all cursor-pointer ${
+                  selectedDistrict === 'ทั้งหมด'
+                    ? 'bg-slate-900 text-white font-bold shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                ทุกอำเภอ ({reports.length})
+              </button>
+              {DISTRICTS.map((d) => {
+                const count = reports.filter((r) => r.district === d).length;
+                const isSelected = selectedDistrict === d;
+                return (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => onSelectDistrict(d)}
+                    className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500 text-slate-950 font-bold shadow-2xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {d} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Secondary Filter controls */}
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
               {/* Category selector */}
               <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-slate-700">รูปแบบ:</span>
+                <span className="font-semibold text-slate-700">หมวดหมู่:</span>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value as ScamCategory | 'all')}
                   className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-md text-slate-800 font-medium focus:outline-none focus:border-amber-600"
                 >
-                  <option value="all">ทุกรูปแบบกลโกง</option>
+                  <option value="all">ทุกรูปแบบกลโกง (ทั้งหมด)</option>
                   {Object.entries(SCAM_CATEGORIES_METADATA).map(([key, val]) => (
                     <option key={key} value={key}>
                       {val.label}
@@ -396,7 +478,7 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                   onClick={() => setFilterOutcome('all')}
                   className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                     filterOutcome === 'all'
-                      ? 'bg-white text-slate-900 shadow-2xs'
+                      ? 'bg-white text-slate-900 shadow-2xs font-semibold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -406,17 +488,17 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                   onClick={() => setFilterOutcome('avoided')}
                   className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                     filterOutcome === 'avoided'
-                      ? 'bg-white text-slate-900 shadow-2xs'
+                      ? 'bg-white text-emerald-800 shadow-2xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  รอดมาได้ (มีวิธีรับมือ)
+                  รอดมาได้ (ไหวตัวทัน)
                 </button>
                 <button
                   onClick={() => setFilterOutcome('loss')}
                   className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                     filterOutcome === 'loss'
-                      ? 'bg-white text-slate-900 shadow-2xs'
+                      ? 'bg-white text-rose-800 shadow-2xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -424,10 +506,26 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                 </button>
               </div>
 
+              {/* Reset active filters */}
+              {(searchQuery || selectedDistrict !== 'ทั้งหมด' || selectedCategory !== 'all' || filterOutcome !== 'all') && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    onSelectDistrict('ทั้งหมด');
+                    setSelectedCategory('all');
+                    setFilterOutcome('all');
+                  }}
+                  className="text-amber-800 hover:text-amber-900 font-semibold underline underline-offset-2 ml-1"
+                >
+                  ล้างตัวกรองทั้งหมด
+                </button>
+              )}
+
               {/* Results count indicator & Data Tools */}
               <div className="ml-auto flex items-center gap-3 text-xs">
-                <span className="text-slate-500 font-mono tabular-nums">
-                  พบ {filteredReports.length} รายการ
+                <span className="text-slate-700 font-mono font-semibold tabular-nums bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
+                  แสดง {filteredReports.length} จาก {reports.length} เคส
                 </span>
                 <span className="text-slate-300">|</span>
                 <button
@@ -436,7 +534,7 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                   className="text-slate-600 hover:text-slate-900 underline underline-offset-2"
                   title="ส่งออกรายงานทั้งหมดเป็นไฟล์ JSON"
                 >
-                  ส่งออกข้อมูล (JSON)
+                  ส่งออก JSON
                 </button>
                 {onResetReports && (
                   <>
@@ -447,7 +545,7 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                       className="text-slate-400 hover:text-rose-600 transition-colors"
                       title="คืนค่าเคสตัวอย่างสำหรับนำเสนอ"
                     >
-                      คืนค่าข้อมูลตัวอย่าง
+                      รีเซ็ตข้อมูล
                     </button>
                   </>
                 )}
@@ -529,30 +627,58 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                     {/* Scammer identifiers info box */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-lg text-xs border border-slate-200/60">
                       {report.phoneNumber && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <div>
-                            <span className="text-slate-500 block text-[10px]">เบอร์ที่ใช้หลอก:</span>
-                            <span className="font-mono font-bold text-slate-900">{report.phoneNumber}</span>
+                        <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-md border border-slate-200/80">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <div className="truncate">
+                              <span className="text-slate-500 block text-[10px]">เบอร์ที่ใช้หลอก:</span>
+                              <span className="font-mono font-bold text-slate-900">{report.phoneNumber}</span>
+                            </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyField(report.phoneNumber!, `phone-${report.id}`)}
+                            className="p-1 hover:bg-slate-100 text-slate-500 rounded text-[10px] shrink-0 font-medium"
+                            title="คัดลอกเบอร์โทร"
+                          >
+                            {copiedField === `phone-${report.id}` ? (
+                              <span className="text-emerald-600 font-bold">คัดลอกแล้ว!</span>
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         </div>
                       )}
 
                       {report.bankAccount && (
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <div>
-                            <span className="text-slate-500 block text-[10px]">บัญชีม้า ({report.bankName || 'ธนาคาร'}):</span>
-                            <span className="font-mono font-bold text-slate-900">{report.bankAccount}</span>
-                            {report.accountName && (
-                              <span className="block text-[11px] text-slate-600 truncate">{report.accountName}</span>
-                            )}
+                        <div className="flex items-center justify-between gap-2 bg-white p-2 rounded-md border border-slate-200/80">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <CreditCard className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <div className="truncate">
+                              <span className="text-slate-500 block text-[10px]">บัญชีม้า ({report.bankName || 'ธนาคาร'}):</span>
+                              <span className="font-mono font-bold text-slate-900">{report.bankAccount}</span>
+                              {report.accountName && (
+                                <span className="block text-[11px] text-slate-600 truncate">{report.accountName}</span>
+                              )}
+                            </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyField(report.bankAccount!, `bank-${report.id}`)}
+                            className="p-1 hover:bg-slate-100 text-slate-500 rounded text-[10px] shrink-0 font-medium"
+                            title="คัดลอกเลขบัญชี"
+                          >
+                            {copiedField === `bank-${report.id}` ? (
+                              <span className="text-emerald-600 font-bold">คัดลอกแล้ว!</span>
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         </div>
                       )}
 
                       {report.scammerHandle && (
-                        <div>
+                        <div className="bg-white p-2 rounded-md border border-slate-200/80 flex flex-col justify-center">
                           <span className="text-slate-500 block text-[10px]">ช่องทาง/เพจ:</span>
                           <span className="text-slate-800 font-medium truncate block">{report.scammerHandle}</span>
                         </div>
@@ -577,6 +703,23 @@ export const DatabaseSection: React.FC<DatabaseSectionProps> = ({
                         {report.countermeasures}
                       </p>
                     </div>
+
+                    {/* Clickable Tag Badges */}
+                    {report.tags && report.tags.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[10px] text-slate-400">แท็ก:</span>
+                        {report.tags.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => setSearchQuery(tag)}
+                            className="px-2 py-0.5 text-[10px] font-medium bg-slate-100 hover:bg-amber-100 hover:text-amber-900 text-slate-600 rounded-md transition-colors cursor-pointer"
+                          >
+                            #{tag}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Action footer: Helpful vote and share */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">

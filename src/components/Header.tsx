@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldAlert, PhoneCall, Menu, X, FileText, Database, PlusCircle, Building2, BookOpen, Scale, GraduationCap } from 'lucide-react';
 import { ACADEMIC_PROJECT_INFO } from '../data/nakhonPathomData';
+import { NpLogo } from './NpLogo';
 
 interface HeaderProps {
   activeTab: string;
@@ -28,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenR
           <div className="flex items-center gap-2 truncate">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             <span className="font-medium text-slate-300">
-              โครงการบริการสังคม วิชาสิทธิมนุษยชน
+              โครงการ มสสส301 สิทธิมนุษยชนและการสร้างเสริมสันติภาพ
             </span>
             <span className="text-slate-600 hidden sm:inline">|</span>
             <span className="text-amber-300 hidden sm:inline">
@@ -49,11 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenR
             onClick={() => { setActiveTab('playbook'); }}
             className="flex items-center gap-2.5 cursor-pointer shrink-0"
           >
-            <img 
-              src="/src/assets/images/np_mahidol_scam_shield_1792037427243.jpg" 
-              alt="NP-Safe นครปฐม-มหิดล สแกมเมอร์ดีเฟนส์" 
-              className="w-10 h-10 rounded-lg object-cover border border-amber-500/40 shadow-sm"
-            />
+            <NpLogo size="md" />
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-base font-bold tracking-tight text-slate-900 whitespace-nowrap">
